@@ -3,8 +3,8 @@ order by title
 
 -- 1) HANDLING FOREIGN CHARACTER 
 
--- As we can note that due to the column properties whcih is set to varchar 
--- netfilx title column is not able to read other that english language which 
+-- As we can note due to the column properties which is set to varchar 
+-- netfilx title column is not able to read other the English language which 
 -- we can see in show_id 
 --s5023	Movie	??? ???
 --s2639	Movie	??? ?????
@@ -16,7 +16,7 @@ order by title
 --s8795	Movie	??????
 --s6178	TV Show	????????
 --s5975	TV Show	??????????????????? 
--- we will perfrom to change the schema defination
+-- We will perform to change the schema definition
 
 
 
@@ -25,7 +25,7 @@ where show_id = 's5023'
 
 -- s5023	Movie	반드시 잡는다	 Hong-seon Kim	Baek Yoon-sik	South Korea	
 
--- now foreign character is processed
+-- now the foreign character is processed
 
 -- 2) REMOVING DUPLICATES
 
@@ -39,16 +39,19 @@ having COUNT(*)>1
 Select title ,count(*)
 from netflix_raw
 group by title
-having COUNT(*)>1
--- yes their is duplicates in title / checking it respect to the table
+having COUNT(*)>1 
+	 
+-- Yes there is duplicates in the title / checking with respect to the table
+	 
 select * from netflix_raw
 where title in(select title from netflix_raw 
 group by title
 having count(*) >1)
 
--- as per the result their are duplicates with same title name but in 
---some case title name is same for the type of the show like tv show or movie 
--- we can't count that title as duplicate 
+-- As per the result there are duplicates with the same title name but in 
+--In some cases, the title name is the same for the type of show like TV show or movie 
+-- We can't count that title as a duplicate 
+	 
 select * from netflix_raw
 where concat(title,type) in(select concat(title,type) from netflix_raw 
 group by title,type
@@ -60,9 +63,9 @@ from netflix_raw)
 select * from cte
 where rn =1
 
--- we can see we have multiple values in single column so we have to 
--- seprate it with respect to show id in a new take so taht we can analyse
--- first is director as we have multiple director fro one show or movie 
+-- We can see we have multiple values in a single column so we have to 
+-- separate it with respect to show_id in a new take so that we can analyse
+-- first is the director as we have multiple directors for one show or movie 
 select show_id , trim(value) as director
 into netflix_director
 from netflix_raw
@@ -98,19 +101,22 @@ order by genre
 
 
 ---- Data type conversion 
-
+----cast(date_added as date) as date_added
 -- cleaned table
 with cte as (select * , 
-			Row_Number() over(Partition by title,type order by title)as rn
+Row_Number() over(Partition by title,type order by title)as rn
 from netflix_raw)
-			select show_id,type,title,cast(date_added as date) as date_added ,
-	release_year,rating,duration,description
+select show_id,type,title,cast(date_added as date) as date_added,
+release_year,rating,duration,description
 from cte
 where rn =1
 
 -- populating the null values 
-
+-- as we populate the country by using the director's column and finding the common director for the country  
+-- there may be directors who worked for or in different countries we will take all  that country in a group
+	 
 --Country 
+	 
 insert into netflix_country
 select show_id, m.country from netflix_raw nr inner join
 (Select director,country from netflix_country nc 
@@ -123,23 +129,23 @@ where nr.director IS NOT NULL
 order by nr.director
 
 
---- we can also check for  duration as we can also possible populate it 
+--- We can also check for duration as we can also possibly populate it 
 
 Select * from netflix_raw 
 where duration is null
 
--- as the ouput we got is the duration have 3 null values 
--- beside the duration column their is rating col 
--- which has wrong value as the rating is given in 74 min / 84 min/66 min
--- so we will copy the value of the rating to duration colum with respect to the same show_id
+-- as the output we got is the duration has 3 null values 
+-- Besides the duration column there is a rating column 
+-- which has the wrong value as the rating is given in 74 min / 84 min/66 min
+-- so we will copy the value of the rating to the duration column concerning the same show_id
 
 
 -- using our cleaned tabe for it 
 with cte as (select * , 
-			Row_Number() over(Partition by title,type order by title)as rn
+Row_Number() over(Partition by title,type order by title)as rn
 from netflix_raw)
-			select show_id,type,title,cast(date_added as date) as date_added ,
-	release_year,rating,case when duration is null then rating else duration end,description
+select show_id,type,title,cast(date_added as date) as date_added,
+release_year,rating,case when duration is null then rating else duration end,description
 from cte
 where rn =1
 
@@ -158,3 +164,15 @@ where rn =1
 -- new table 
 select * from netflix
 order by title
+
+
+/*In the above SQL Querys we have performed 
+
+1) Extraction of data set from Python to MS-SQL
+2) Handling of Foreign characters and making changes in table Schema
+3) Removing Duplicates 
+4) New dimension table for country, cast,listed_in, director
+5) Identifying and Populating Missing values
+
+
+*/
