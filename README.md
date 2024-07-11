@@ -1,4 +1,4 @@
-# Netflix-Data-ELT and Analysis
+# Netflix-Data-Analysis
 
 ELT stands for Extract, Load, Transform. It's a process used to handle data in a way that makes it easier to analyze and use. Here’s a simple breakdown:
 
